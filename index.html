@@ -1,0 +1,76 @@
+<title>Ecosystem DAO MVP</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: single-column working app, tabs on top, one card per proposal or milestone. */
+:root{--bg:#f6f7f4;--cd:#ffffff;--tx:#17211b;--mu:#5d6b62;--ac:#0f766e;--on-ac:#ffffff;--bd:#dfe4de;--fo:#b45309;--in:#4338ca;--le:#be123c}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1512;--cd:#18211c;--tx:#e8efe9;--mu:#9aab9f;--ac:#2dd4bf;--on-ac:#0f1512;--bd:#2a362f;--fo:#fbbf24;--in:#a5b4fc;--le:#fb7185;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1512;--cd:#18211c;--tx:#e8efe9;--mu:#9aab9f;--ac:#2dd4bf;--on-ac:#0f1512;--bd:#2a362f;--fo:#fbbf24;--in:#a5b4fc;--le:#fb7185;color-scheme:dark}
+body{background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:16px}
+.w{max-width:920px;margin:auto}
+h1{font-size:20px;margin:0}h2{font-size:17px;margin:0 0 8px}p{margin:4px 0}
+.mu{color:var(--mu);font-size:13px}
+.hd{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+nav{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;border:1px solid var(--bd);background:var(--cd);color:var(--tx);padding:7px 12px;border-radius:8px;cursor:pointer}
+button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+button.on,button.pr{background:var(--ac);color:var(--on-ac);border-color:var(--ac)}
+button.role{padding:16px;text-align:left}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:12px}
+.c{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px;min-width:0}.g .c{margin:0}
+.n{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.b{height:8px;background:var(--bd);border-radius:4px;overflow:hidden;margin:3px 0 6px}.b i{display:block;height:100%}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;border:1px solid var(--bd);font-size:12px;margin-right:4px}
+#cap{position:sticky;top:env(safe-area-inset-top,0px);background:var(--ac);color:var(--on-ac);padding:10px 14px;border-radius:10px;margin-bottom:12px;font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.ok{color:var(--ac);font-weight:600}
+</style>
+<div class="w">
+<div class="hd" id="hd"><div><h1>Ecosystem DAO</h1><div class="mu">One shared rulebook for founders, investors and lenders · MVP prototype</div></div><nav id="nv"></nav></div>
+<div id="cap" hidden></div><div id="v"></div>
+<p class="mu" style="margin-top:20px">Prototype with simulated data: no real funds, wallets or blockchain. Smart-contract rules (balanced voting, 2-of-4 treasury signing, milestone release) are modelled in the browser.</p></div>
+<script>
+const C={FO:'Founder',IN:'Investor',LE:'Lender'},SG={FO:'Founder',IN:'Investor',LE:'Lender',TR:'Independent trustee'},inr=n=>'₹'+n.toLocaleString('en-IN'),$=i=>document.getElementById(i);
+const S={role:null,tab:'dash',ai:{},bal:2400000,log:['Treasury seeded with ₹24,00,000 pilot fund'],
+P:[{id:1,t:'Working-capital line for 12 small manufacturers',by:'Tumakuru Manufacturers Collective',a:600000,v:{FO:[14,3],IN:[5,4],LE:[3,5]},me:0},
+{id:2,t:'Shared due-diligence desk for small ventures',by:'Shared Services Pool',a:250000,v:{FO:[11,2],IN:[7,2],LE:[6,1]},me:0},
+{id:3,t:'Bridge loan for a women-led garment unit',by:'Stree Shakti Apparels',a:400000,v:{FO:[8,5],IN:[6,1],LE:[2,6]},me:0},
+{id:4,t:'Seed round for an agri-food startup',by:'Chamarajanagar Agri-Foods',a:450000,v:{FO:[12,2],IN:[8,3],LE:[4,3]},me:0}],
+R:[{id:1,t:'Machinery purchased and installed',o:'Tumakuru Manufacturers Collective',a:200000,ok:0,sg:[],rel:0},
+{id:2,t:'Due-diligence desk staffed, 10 members onboarded',o:'Shared Services Pool',a:100000,ok:1,sg:['IN'],rel:0},
+{id:3,t:'Garment unit commissioned and first batch shipped',o:'Stree Shakti Apparels',a:150000,ok:0,sg:[],rel:0}]};
+const r=([y,n])=>y/(y+n||1),score=p=>Math.round(100*Object.values(p.v).map(r).reduce((a,b)=>a+b)/Object.keys(C).length),
+tot=(p,i)=>Object.values(p.v).reduce((a,x)=>a+x[i],0);
+const log=m=>S.log.unshift(m);
+function vote(id,y){const p=S.P.find(x=>x.id==id);if(p.me)return;p.v[S.role][y?0:1]++;p.me=y?1:2;log(`${C[S.role]} voted ${y?'yes':'no'} on "${p.t}"`);render()}
+function aiSum(id){const p=S.P.find(x=>x.id==id),w=Object.entries(p.v).sort((a,b)=>r(a[1])-r(b[1]))[0][0];
+S.ai[id]=`Requests ${inr(p.a)} from ${p.by}. Balanced support ${score(p)}% (${tot(p,0)} yes / ${tot(p,1)} no); weakest backing from ${C[w]} members.${p.a>500000?' Flag: above the ₹5,00,000 single-release limit, so fund in tranches.':''} Suggested match: ${/working|manufactur/i.test(p.t)?'MSME working-capital lenders':/seed|agri/i.test(p.t)?'seed investors in agri-food':/bridge|garment/i.test(p.t)?'NBFC bridge-loan lenders':'incubator shared-services funds'}. (AI assists; members decide.)`;render()}
+function verify(id){const x=S.R.find(q=>q.id==id);x.ok=1;log(`Independent verifier confirmed: "${x.t}"`);render()}
+function sign(id,who=S.role){const x=S.R.find(q=>q.id==id);if(!x.ok||x.rel||x.sg.includes(who))return;x.sg.push(who);log(`${SG[who]} signer approved release of ${inr(x.a)}`);
+if(x.sg.length>=2){x.rel=1;S.bal-=x.a;log(`${inr(x.a)} released to ${x.o} (2 of 4 signatures)`)}render()}
+const go=t=>{S.tab=t;render()};
+function login(){return `<div class="c"><h2>Join and verify</h2><p class="mu">Choose how you join. Every member type gets an equal share of voting power.</p><div class="g" style="margin-top:12px">${Object.entries(C).map(([k,n])=>`<button onclick="S.role='${k}';render()" class="role"><b style="color:var(--${k.toLowerCase()})">${n}</b><br><span class="mu">Enter as a verified ${n.toLowerCase()}</span></button>`).join('')}</div><button class="pr" onclick="tour()">▶ Play auto demo tour</button></div>`}
+function dash(){const op=S.P.filter(p=>!p.me).length,vr=S.R.filter(x=>x.ok).length;
+return `<div class="g"><div class="c"><div class="mu">Members onboarded</div><div class="n">42</div></div><div class="c"><div class="mu">Shared treasury</div><div class="n">${inr(S.bal)}</div></div><div class="c"><div class="mu">Open proposals (not voted by you)</div><div class="n">${op}</div></div><div class="c"><div class="mu">Verified impact reports</div><div class="n">${vr}/${S.R.length}</div></div></div>
+<div class="c"><h2>Member mix: 24 / 11 / 7, voting power 1/3 each</h2>${[['FO',24],['IN',11],['LE',7]].map(([k,n])=>`<div class="mu">${C[k]}s (${n} members)</div><div class="b"><i style="width:33.3%;background:var(--${k.toLowerCase()})"></i></div>`).join('')}</div>
+<div class="c"><h2>Activity log</h2>${S.log.slice(0,6).map(l=>`<p class="mu">• ${l}</p>`).join('')}</div>`}
+function prop(){return S.P.map(p=>{const s=score(p),h=Math.round(100*tot(p,0)/(tot(p,0)+tot(p,1)));return `<div class="c"><div class="row"><div><h2>${p.t}</h2><div class="mu">${p.by} · asks ${inr(p.a)}</div></div><div class="n ${s>=50?'ok':''}">${s}%</div></div>
+${Object.entries(p.v).map(([k,v])=>`<div class="mu">${C[k]}s: ${v[0]} yes / ${v[1]} no</div><div class="b"><i style="width:${Math.round(100*r(v))}%;background:var(--${k.toLowerCase()})"></i></div>`).join('')}
+<p class="mu">Balanced score ${s}% (${s>=50?'passing':'not passing'}) vs raw headcount ${h}%. Each member type counts equally.</p>
+<div class="row"><div>${p.me?`<span class="pill">You voted ${p.me==1?'yes':'no'}</span>`:`<button class="pr" onclick="vote(${p.id},1)">Vote yes</button> <button onclick="vote(${p.id},0)">Vote no</button>`}</div><button onclick="aiSum(${p.id})">AI summary</button></div>${S.ai[p.id]?`<p class="mu" style="margin-top:8px">${S.ai[p.id]}</p>`:''}</div>`}).join('')}
+function tre(){return `<div class="c"><div class="mu">Multi-signature treasury balance</div><div class="n">${inr(S.bal)}</div><p class="mu">Rule: a milestone must be verified, then needs 2 of 4 signatures (a founder, an investor, a lender and an independent trustee).</p></div>`+S.R.map(x=>`<div class="c"><div class="row"><div><h2>${x.t}</h2><div class="mu">${x.o} · ${inr(x.a)}</div></div>${x.rel?'<span class="ok">✓ Released</span>':!x.ok?'<span class="mu">Awaiting verification</span>':`<span class="mu">${x.sg.length}/2 signatures</span>`}</div><p style="margin-top:6px">${Object.keys(SG).map(k=>`<span class="pill" style="${x.sg.includes(k)?'border-color:var(--ac)':''}">${x.sg.includes(k)?'✓ ':''}${SG[k]}</span>`).join('')}</p>${x.ok&&!x.rel&&!x.sg.includes(S.role)?`<button class="pr" onclick="sign(${x.id})">Sign as ${C[S.role]}</button>`:''}</div>`).join('')}
+function imp(){return `<p class="mu" style="margin-bottom:10px">Open impact registry: funds follow verified milestones, not promises.</p>`+S.R.map(x=>`<div class="c"><div class="row"><div><h2>${x.t}</h2><div class="mu">${x.o} · evidence: photos, invoices, field report</div></div>${x.ok?'<span class="ok">✓ Verified</span>':`<button class="pr" onclick="verify(${x.id})">Verify as independent verifier</button>`}</div></div>`).join('')}
+function render(){const lg=!S.role;$('nv').innerHTML=lg?'':[['dash','Dashboard'],['prop','Proposals'],['tre','Treasury'],['imp','Impact']].map(([k,n])=>`<button class="${S.tab==k?'on':''}" onclick="go('${k}')">${n}</button>`).join('')+`<span class="pill" style="align-self:center">${C[S.role]}</span><button onclick="tour()">▶ Demo</button><button onclick="S.role=null;render()">Log out</button>`;
+$('v').innerHTML=lg?login():{dash,prop,tre,imp}[S.tab]()}
+let T=0;const sl=m=>new Promise(f=>setTimeout(f,m));
+async function tour(){if(T){T=0;$('cap').hidden=1;return}T=1;const st=[
+['Login: a founder joins and verifies their identity.',()=>{S.role='FO';S.tab='dash'}],
+['Dashboard: members, treasury, proposals and verified impact at a glance.',()=>{}],
+['Proposals: members vote, and each member type carries equal weight.',()=>{S.tab='prop';vote(3,1)}],
+['The AI assistant summarizes a proposal and flags risk. Humans decide.',()=>aiSum(1)],
+['Impact: an independent verifier confirms the milestone evidence.',()=>{S.tab='imp';verify(1)}],
+['Treasury: the founder signs the release.',()=>{S.tab='tre';sign(1,'FO')}],
+['A signer from another member type, the investor, co-signs, so funds release automatically.',()=>sign(1,'IN')],
+['Tour complete. Try it yourself (tap Demo to stop at any time).',()=>{S.tab='dash'}]];
+for(const[c,f]of st){if(!T)return;$('cap').hidden=0;$('cap').textContent=c;f();render();await sl(3600)}T=0;await sl(1500);$('cap').hidden=1}
+render();
+</script>
