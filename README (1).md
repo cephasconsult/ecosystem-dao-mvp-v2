@@ -9,7 +9,8 @@ One shared rulebook for founders, investors and lenders.
 - Proposals with balanced voting and an AI-style summary (scripted stand-in)
 - Impact registry: an independent verifier confirms milestone evidence
 - Multi-signature treasury: 2 of 4 signatures release funds for verified milestones
-- Auto-play demo tour (tap "Demo")
+- Auto-play demo tour (tap "Demo"), now with spoken audio narration
+- Audio narration: toggle it with the "Narration" button, or tap "Read screen" to hear the current page read aloud. It uses the browser's built-in speech engine (Web Speech API), so there are no audio files or API keys. The voice depends on your device; an English (India) voice is used when available.
 
 ## Run it
 Open `index.html` in any browser. It is a single file with no build step.
