@@ -59,18 +59,26 @@ ${Object.entries(p.v).map(([k,v])=>`<div class="mu">${C[k]}s: ${v[0]} yes / ${v[
 <div class="row"><div>${p.me?`<span class="pill">You voted ${p.me==1?'yes':'no'}</span>`:`<button class="pr" onclick="vote(${p.id},1)">Vote yes</button> <button onclick="vote(${p.id},0)">Vote no</button>`}</div><button onclick="aiSum(${p.id})">AI summary</button></div>${S.ai[p.id]?`<p class="mu" style="margin-top:8px">${S.ai[p.id]}</p>`:''}</div>`}).join('')}
 function tre(){return `<div class="c"><div class="mu">Multi-signature treasury balance</div><div class="n">${inr(S.bal)}</div><p class="mu">Rule: a milestone must be verified, then needs 2 of 4 signatures (a founder, an investor, a lender and an independent trustee).</p></div>`+S.R.map(x=>`<div class="c"><div class="row"><div><h2>${x.t}</h2><div class="mu">${x.o} · ${inr(x.a)}</div></div>${x.rel?'<span class="ok">✓ Released</span>':!x.ok?'<span class="mu">Awaiting verification</span>':`<span class="mu">${x.sg.length}/2 signatures</span>`}</div><p style="margin-top:6px">${Object.keys(SG).map(k=>`<span class="pill" style="${x.sg.includes(k)?'border-color:var(--ac)':''}">${x.sg.includes(k)?'✓ ':''}${SG[k]}</span>`).join('')}</p>${x.ok&&!x.rel&&!x.sg.includes(S.role)?`<button class="pr" onclick="sign(${x.id})">Sign as ${C[S.role]}</button>`:''}</div>`).join('')}
 function imp(){return `<p class="mu" style="margin-bottom:10px">Open impact registry: funds follow verified milestones, not promises.</p>`+S.R.map(x=>`<div class="c"><div class="row"><div><h2>${x.t}</h2><div class="mu">${x.o} · evidence: photos, invoices, field report</div></div>${x.ok?'<span class="ok">✓ Verified</span>':`<button class="pr" onclick="verify(${x.id})">Verify as independent verifier</button>`}</div></div>`).join('')}
-function render(){const lg=!S.role;$('nv').innerHTML=lg?'':[['dash','Dashboard'],['prop','Proposals'],['tre','Treasury'],['imp','Impact']].map(([k,n])=>`<button class="${S.tab==k?'on':''}" onclick="go('${k}')">${n}</button>`).join('')+`<span class="pill" style="align-self:center">${C[S.role]}</span><button onclick="tour()">▶ Demo</button><button onclick="S.role=null;render()">Log out</button>`;
+/* Audio narration: uses the browser's built-in speech engine (Web Speech API), so there are no audio files or keys. */
+const SP='speechSynthesis'in window;let N=SP;try{if(localStorage.getItem('narr')==='off')N=false}catch(e){}
+const vo=()=>{const v=speechSynthesis.getVoices();return v.find(x=>/en[-_]IN/i.test(x.lang))||v.find(x=>/^en/i.test(x.lang))||null};
+const stopSpeech=()=>{if(SP)speechSynthesis.cancel()};
+function speak(t,force){return new Promise(f=>{if(!SP||(!N&&!force)||!t)return f();speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t),v=vo();if(v){u.voice=v;u.lang=v.lang}else u.lang='en-IN';u.rate=.95;let d=0,k;const e=()=>{if(!d){d=1;clearTimeout(k);f()}};k=setTimeout(e,t.length*100+4000);u.onend=u.onerror=e;speechSynthesis.speak(u)})}
+function nar(){N=!N;if(!N)stopSpeech();try{localStorage.setItem('narr',N?'on':'off')}catch(e){}render()}
+function rd(){if(T)return;stopSpeech();speak($('v').innerText.replace(/₹([\d,]+)/g,(m,n)=>n.replace(/,/g,'')+' rupees').replace(/[•·✓]/g,'. ').replace(/\s+/g,' '),1)}
+function render(){const lg=!S.role,nb=SP?`<button onclick="nar()" aria-pressed="${N}">${N?'🔊 Narration on':'🔇 Narration off'}</button>`:'';$('nv').innerHTML=lg?nb:[['dash','Dashboard'],['prop','Proposals'],['tre','Treasury'],['imp','Impact']].map(([k,n])=>`<button class="${S.tab==k?'on':''}" onclick="go('${k}')">${n}</button>`).join('')+`<span class="pill" style="align-self:center">${C[S.role]}</span><button onclick="tour()">▶ Demo</button>${SP?'<button onclick="rd()">🔊 Read screen</button>':''}${nb}<button onclick="S.role=null;render()">Log out</button>`;
 $('v').innerHTML=lg?login():{dash,prop,tre,imp}[S.tab]()}
-let T=0;const sl=m=>new Promise(f=>setTimeout(f,m));
-async function tour(){if(T){T=0;$('cap').hidden=1;return}T=1;const st=[
-['Login: a founder joins and verifies their identity.',()=>{S.role='FO';S.tab='dash'}],
-['Dashboard: members, treasury, proposals and verified impact at a glance.',()=>{}],
-['Proposals: members vote, and each member type carries equal weight.',()=>{S.tab='prop';vote(3,1)}],
-['The AI assistant summarizes a proposal and flags risk. Humans decide.',()=>aiSum(1)],
-['Impact: an independent verifier confirms the milestone evidence.',()=>{S.tab='imp';verify(1)}],
-['Treasury: the founder signs the release.',()=>{S.tab='tre';sign(1,'FO')}],
-['A signer from another member type, the investor, co-signs, so funds release automatically.',()=>sign(1,'IN')],
-['Tour complete. Try it yourself (tap Demo to stop at any time).',()=>{S.tab='dash'}]];
-for(const[c,f]of st){if(!T)return;$('cap').hidden=0;$('cap').textContent=c;f();render();await sl(3600)}T=0;await sl(1500);$('cap').hidden=1}
+let T=0,run=0;const sl=m=>new Promise(f=>setTimeout(f,m));
+async function tour(){if(T){T=0;$('cap').hidden=1;stopSpeech();return}T=1;const id=++run,st=[
+['Login: a founder joins and verifies their identity.',()=>{S.role='FO';S.tab='dash'},'Welcome to the Ecosystem DAO. A founder joins and verifies their identity. Every member type, founder, investor and lender, gets an equal share of voting power.'],
+['Dashboard: members, treasury, proposals and verified impact at a glance.',()=>{},'The dashboard shows members onboarded, the shared treasury balance, open proposals, and verified impact reports, all at a glance.'],
+['Proposals: members vote, and each member type carries equal weight.',()=>{S.tab='prop';vote(3,1)},'On the proposals page, members vote. Each member type carries equal weight, so a proposal needs balanced support, not just a raw headcount.'],
+['The AI assistant summarizes a proposal and flags risk. Humans decide.',()=>aiSum(1),'The A I assistant summarizes a proposal and flags risks, such as a request above the single release limit. It only assists. Humans decide.'],
+['Impact: an independent verifier confirms the milestone evidence.',()=>{S.tab='imp';verify(1)},'Next, impact. An independent verifier confirms the milestone evidence, such as photos, invoices and field reports, before any money can move.'],
+['Treasury: the founder signs the release.',()=>{S.tab='tre';sign(1,'FO')},'In the treasury, the founder signs the release. One signature is not enough.'],
+['A signer from another member type, the investor, co-signs, so funds release automatically.',()=>sign(1,'IN'),'A signer from another member type, the investor, co-signs. Two of four signatures are now in place, so the funds release automatically.'],
+['Tour complete. Try it yourself (tap Demo to stop at any time).',()=>{S.tab='dash'},'That completes the tour. Try it yourself. Tap Demo at any time to stop.']];
+for(const[c,f,n]of st){if(!T||id!=run)return;$('cap').hidden=0;$('cap').textContent=c;f();render();if(N&&SP)await Promise.all([speak(n),sl(1800)]);else await sl(3600)}
+if(id!=run)return;T=0;await sl(1500);if(id==run)$('cap').hidden=1}
 render();
 </script>
